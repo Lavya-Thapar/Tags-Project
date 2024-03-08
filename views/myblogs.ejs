@@ -1,0 +1,186 @@
+<!-- views/myblogs.ejs -->
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>My Blogs</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background: linear-gradient(to right bottom, #dbaee5, #8f94fb);
+            margin: 0;
+            padding: 0;
+            display: flex;
+            flex-direction: column;
+            align-items: flex-start; /* Align items to the left */
+            min-height: 100vh;
+        }
+
+        h1 {
+            color: #333;
+            margin-bottom: 24px;
+        }
+
+        ul {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            width: 100%;
+            max-width: 600px;
+        }
+
+        li {
+            background-color: #fff;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+            padding: 16px;
+            width: 100%; /* Make the blogs take the full width */
+            box-sizing: border-box;
+        }
+
+        h2 {
+            color: #007bff;
+            margin-bottom: 8px;
+        }
+
+        p {
+            color: #666;
+            margin-bottom: 16px;
+            
+        }
+        
+        .toggle-content-btn {
+            background-color: #007bff;
+            color: #fff;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .delete-blog-button {
+            background-color: #007bff;
+            color: #fff;
+            padding: 8px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            margin-bottom: 8px;
+        }
+
+        .content-dropdown {
+            display: none;
+            width: 100%;
+        }
+        
+        .content-dropdown.active {
+            display: block;
+        }
+
+        .my-blogs-btn {
+            background-color: #28a745;
+            color: #fff;
+            padding: 10px 16px;
+            border: none;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin-bottom: 16px;
+            align-self: flex-end; /* Align the button to the right */
+        }
+    </style>
+</head>
+<<body>
+    <h1>My Blogs</h1>
+    <button class="my-blogs-btn" onclick="location.href='/';">Create Blog</button>
+    <ul class="blog-description">
+        <% articles.forEach(article => { %>
+            <li>
+                <h2 ><%= article.heading %></h2>
+                <button class="toggle-content-btn" data-content-id="<%= article._id %>">Show Content</button>
+                <div class="content-dropdown" id="<%= article._id %>">
+                    <p><%= article.content %></p>
+
+                    <% if (article.tags && article.tags.length > 0) { %>
+                        <h3>Tags:</h3>
+                        <ul>
+                            <% article.tags.forEach(tag => { %>
+                                <li><%= tag %></li>
+                            <% }); %>
+                        </ul>
+                    <% } %>
+                </div>
+                <button class="delete-blog-button" onclick="confirmDelete('<%= article._id %>')">DELETE BLOG</button>
+                
+            </li>
+            </li>
+        <% }); %>
+    </ul>
+
+    <script>
+
+        function confirmDelete(blogId) {
+            const isConfirmed = confirm('Are you sure you want to delete this blog entry?');
+
+            if (isConfirmed) {
+                deleteBlog(blogId);
+            }
+        }
+
+        async function deleteBlog(blogId) {
+            try {
+                const response = await fetch(`/delete/${blogId}`, {
+                    method: 'DELETE',
+                });
+
+                if (response.ok) {
+                    // Handle success, such as removing the deleted blog entry from the UI
+                    console.log('Blog deleted successfully');
+                    // Reload the page after deletion
+                    location.reload();
+                } else {
+                    // Handle error
+                    console.error('Failed to delete blog');
+                }
+            } catch (error) {
+                console.error(error);
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const toggleButtons = document.querySelectorAll('.toggle-content-btn');
+
+            toggleButtons.forEach(button => {
+                button.addEventListener('click', async function () {
+                    const contentId = this.getAttribute('data-content-id');
+                    const contentDropdown = document.getElementById(contentId);
+
+                    // If content is not already loaded, fetch it from the server
+                    if (contentDropdown.innerHTML.trim() === '') {
+                        try {
+                            const response = await fetch(`/getcontent/${contentId}`);
+                            const content = await response.text();
+                            contentDropdown.innerHTML = `<p>${content}</p>`;
+                        } catch (error) {
+                            console.error(error);
+                            // Handle error fetching content
+                        }
+                    }
+
+                    // Toggle the 'active' class on the content dropdown
+                    contentDropdown.classList.toggle('active');
+
+                    // Update the button text based on visibility
+                    const isVisible = contentDropdown.classList.contains('active');
+                    this.textContent = isVisible ? 'Hide Content' : 'Show Content';
+                });
+            });
+        });
+    </script>
+</body>
+</html>
